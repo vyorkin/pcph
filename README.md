@@ -7,6 +7,13 @@ Programming in Haskell book) by Simon Marlow.
 
 ### Control.Parallel.Strategies
 
+`rpar` - Argument could be evaluated in parallel
+`rseq` - Evaluate argument and wait for the result
+
+In both cases evaluation is to WHNF.
+
+Patterns:
+
 1. `rpar` + `rpar`
 
 ```haskell

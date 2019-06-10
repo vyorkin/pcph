@@ -8,11 +8,12 @@ maintainer:          vasiliy.yorkin@gmail.com
 extra-source-files:  CHANGELOG.md
 
 common core
-  build-depends:       base ^>=4.12
-                     , parallel ^>= 3.2
-                     , time ^>= 1.9
+  build-depends:       base
+                     , parallel
+                     , deepseq
+                     , time
+                     , array
   default-language:    Haskell2010
-  default-extensions:  OverloadedStrings
 
 common exe
   import:              core
@@ -28,10 +29,12 @@ common exe
                        -fhide-source-paths
                        -Wmissing-export-lists
                        -Wpartial-fields
+  build-depends:       pcph
 
 library
   import:              core
   hs-source-dirs:      src
+  exposed-modules:     Sudoku
   ghc-options:         -Wall
                        -Wincomplete-uni-patterns
                        -Wincomplete-record-updates
@@ -46,3 +49,36 @@ executable rpar_rpar
   import:              exe
   hs-source-dirs:      src
   main-is:             rpar_rpar.hs
+
+executable rpar_rseq
+  import:              exe
+  hs-source-dirs:      src
+  main-is:             rpar_rseq.hs
+
+executable rpar_rseq_rseq
+  import:              exe
+  hs-source-dirs:      src
+  main-is:             rpar_rseq_rseq.hs
+
+executable rpar_rpar_rseq_rseq
+  import:              exe
+  hs-source-dirs:      src
+  main-is:             rpar_rpar_rseq_rseq.hs
+
+executable rpar_fib
+  import:              exe
+  hs-source-dirs:      src
+  main-is:             rpar_fib.hs
+
+executable sudoku1
+  import:              exe
+  hs-source-dirs:      src
+  main-is:             sudoku1.hs
+  other-modules:       Sudoku
+
+executable sudoku2
+  import:              exe
+  hs-source-dirs:      src
+  main-is:             sudoku2.hs
+  build-depends:       pcph
+  other-modules:       Sudoku
