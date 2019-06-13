@@ -82,3 +82,10 @@ executable sudoku2
   main-is:             sudoku2.hs
   build-depends:       pcph
   other-modules:       Sudoku
+
+executable sudoku3
+  import:              exe
+  hs-source-dirs:      src
+  main-is:             sudoku3.hs
+  build-depends:       pcph
+  other-modules:       Sudoku
