@@ -5,6 +5,56 @@ Programming in Haskell book) by Simon Marlow.
 
 # Notes
 
+### Basics
+
+#### `NFData`
+
+```haskell
+class NFData a where
+  rnf :: a -> ()
+  rnf a = a `seq` ()
+```
+
+The `rnf` name stands for “reduce to normal-form.”
+It fully evaluates its argument and then returns `()`.
+
+```haskell
+data Tree a = Empty | Branch (Tree a) a (Tree a)
+
+instance NFData a => NFData (Tree a) where
+  rnf Empty = ()
+  rnf (Branch l x r) = rnf l `seq` rnf x `seq` rnf r
+```
+
+#### `seq`, `deepseq`, `rnf`, `evaluate`, `force`
+
+The idea is to just recursively apply `rnf` to the components of the data type,
+composing the calls to `rnf` together with `seq`.
+
+`a seq b` - Evaluate `a` to WHNF and return `b`
+
+`rnf a` - Evaluate `a` to NF and return `()`.
+
+```haskell
+rnf a = a `seq` ()
+```
+
+`a deepseq b` - Evaluate `a` to NF.
+
+```haskell
+deepseq :: NFData a => a -> b -> b
+deepseq a b = rnf a `seq` b
+```
+
+* `force` - Turn WHNF into NF.
+
+If the program evaluates `force x` to WHNF, then `x` will be evaluated to NF.
+
+```haskell
+force :: NFData a => a -> a
+force x = x `deepseq` x
+```
+
 ### `Control.Parallel.Strategies`
 
 `rpar` - Argument could be evaluated in parallel
@@ -56,25 +106,6 @@ fn x y = runEval $ do
 Unlikely to be useful. We rarely know in advance which of the two computations
 is the longest one.
 
+## Eval Strategies
 
-## `NFData`
-
-```haskell
-class NFData a where
-  rnf :: a -> ()
-  rnf a = a `seq` ()
-```
-
-The `rnf` name stands for “reduce to normal-form.”
-It fully evaluates its argument and then returns `()`.
-
-```haskell
-data Tree a = Empty | Branch (Tree a) a (Tree a)
-
-instance NFData a => NFData (Tree a) where
-  rnf Empty = ()
-  rnf (Branch l x r) = rnf l `seq` rnf x `seq` rnf r
-```
-
-The idea is to just recursively apply `rnf` to the components of the data type,
-composing the calls to rnf together with `seq`.
+...
