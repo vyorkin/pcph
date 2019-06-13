@@ -5,7 +5,7 @@ Programming in Haskell book) by Simon Marlow.
 
 # Notes
 
-### Control.Parallel.Strategies
+### `Control.Parallel.Strategies`
 
 `rpar` - Argument could be evaluated in parallel
 `rseq` - Evaluate argument and wait for the result
@@ -55,3 +55,26 @@ fn x y = runEval $ do
 
 Unlikely to be useful. We rarely know in advance which of the two computations
 is the longest one.
+
+
+## `NFData`
+
+```haskell
+class NFData a where
+  rnf :: a -> ()
+  rnf a = a `seq` ()
+```
+
+The `rnf` name stands for “reduce to normal-form.”
+It fully evaluates its argument and then returns `()`.
+
+```haskell
+data Tree a = Empty | Branch (Tree a) a (Tree a)
+
+instance NFData a => NFData (Tree a) where
+  rnf Empty = ()
+  rnf (Branch l x r) = rnf l `seq` rnf x `seq` rnf r
+```
+
+The idea is to just recursively apply `rnf` to the components of the data type,
+composing the calls to rnf together with `seq`.

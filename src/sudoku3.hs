@@ -3,6 +3,8 @@ module Main (main) where
 import System.Environment (getArgs)
 import Sudoku (solve)
 import Data.Maybe (isJust)
+import Control.Exception (evaluate)
+import Control.Monad (void)
 import Control.Parallel.Strategies (Eval, runEval, rpar)
 
 -- Dynamic partitioning
@@ -33,6 +35,11 @@ main = do
   let
     puzzles = lines file
     solutions = runEval (parMap solve puzzles)
+
+  -- Uncomment to see the eventlog with clear separation
+  -- between the sequential and the parallel part.
+  -- void $ evaluate (length puzzles)
+
   print (length (filter isJust solutions))
 
 -- | Applies a function to a list in parallel.
