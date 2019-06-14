@@ -1,7 +1,9 @@
 # PCPH
 
-Some notes & examples while reading the PCPH (Parallel and Concurrent
-Programming in Haskell book) by Simon Marlow.
+## Synopsis
+
+Some notes, quotes & examples that I take while reading the PCPH (Parallel and
+Concurrent Programming in Haskell book) by Simon Marlow.
 
 # Notes
 
@@ -15,7 +17,7 @@ class NFData a where
   rnf a = a `seq` ()
 ```
 
-The `rnf` name stands for “reduce to normal-form.”
+The `rnf` name stands for "reduce to normal-form."
 It fully evaluates its argument and then returns `()`.
 
 ```haskell
@@ -54,6 +56,8 @@ If the program evaluates `force x` to WHNF, then `x` will be evaluated to NF.
 force :: NFData a => a -> a
 force x = x `deepseq` x
 ```
+
+CAUTION: Avoid repeated uses of `force` or `deepseq` on the same data.
 
 ### `Control.Parallel.Strategies`
 
@@ -108,4 +112,24 @@ is the longest one.
 
 ## Eval Strategies
 
-...
+```haskell
+type Strategy a = a -> Eval a
+```
+
+Strategy takes a data structure as input, traverses the structure creating
+parallelism with `rpar` and rseq, and then returns the original value.
+
+Use `rparWith` to apply a `Strategy` in parallel.
+
+```haskell
+rparWith :: Strategy a -> Strategy a
+```
+
+`r0` - Don't evaluate this component at all.
+
+For example, the following evaluates only the
+first component of both pairs in parallel.
+
+```haskell
+evalPair (evalPair rpar r0) (evalPair rpar r0)
+```

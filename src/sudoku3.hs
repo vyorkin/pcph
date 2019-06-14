@@ -38,7 +38,7 @@ main = do
 
   -- Uncomment to see the eventlog with clear separation
   -- between the sequential and the parallel part.
-  -- void $ evaluate (length puzzles)
+  void $ evaluate (length puzzles)
 
   print (length (filter isJust solutions))
 

@@ -89,3 +89,15 @@ executable sudoku3
   main-is:             sudoku3.hs
   build-depends:       pcph
   other-modules:       Sudoku
+
+executable strat1
+  import:              exe
+  hs-source-dirs:      src
+  main-is:             strat1.hs
+  build-depends:       pcph
+
+executable strat2
+  import:              exe
+  hs-source-dirs:      src
+  main-is:             strat2.hs
+  build-depends:       pcph
