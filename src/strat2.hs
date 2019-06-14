@@ -33,3 +33,17 @@ fib :: Integer -> Integer
 fib 0 = 1
 fib 1 = 1
 fib n = fib (n - 1) + fib (n - 2)
+
+parMap :: (a -> b) -> [a] -> [b]
+parMap f xs = f <$> xs `using` parList rseq
+
+--       :: (a -> Eval a) -> ([a] -> Eval [a])
+evalList :: Strategy a -> Strategy [a]
+evalList s [] = return []
+evalList s (x:xs) = do
+  x'  <- s x
+  xs' <- evalList s xs
+  return (x':xs')
+
+parList :: Strategy a -> Strategy [a]
+parList s = evalList (rparWith s)

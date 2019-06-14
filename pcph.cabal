@@ -101,3 +101,10 @@ executable strat2
   hs-source-dirs:      src
   main-is:             strat2.hs
   build-depends:       pcph
+
+executable sudoku4
+  import:              exe
+  hs-source-dirs:      src
+  main-is:             sudoku4.hs
+  build-depends:       pcph
+  other-modules:       Sudoku
