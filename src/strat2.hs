@@ -18,6 +18,7 @@ rdeepseq x = rseq (force x)
 parPairWith :: Strategy a -> Strategy b -> Strategy (a, b)
 parPairWith sa sb = evalPair (rparWith sa) (rparWith sb)
 
+-- e.g. this fully evaluates both components (in parallel):
 -- parPairWith rdeepseq rdeepseq :: (NFData a, NFData b) => Strategy (a, b)
 
 foo :: Strategy ((a1, b1), (a2, b2))

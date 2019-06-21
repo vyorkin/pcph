@@ -11,6 +11,7 @@ common core
   build-depends:       base
                      , parallel
                      , deepseq
+                     , bytestring
                      , time
                      , array
   default-language:    Haskell2010
@@ -18,9 +19,6 @@ common core
 common exe
   import:              core
   ghc-options:         -Wall
-                       -threaded
-                       -rtsopts
-                       -with-rtsopts=-N
                        -Wincomplete-uni-patterns
                        -Wincomplete-record-updates
                        -Wcompat
@@ -29,7 +27,12 @@ common exe
                        -fhide-source-paths
                        -Wmissing-export-lists
                        -Wpartial-fields
-  build-depends:       pcph
+
+common exe-threaded
+  import:              exe
+  ghc-options:         -threaded
+                       -rtsopts
+                       -with-rtsopts=-N
 
 library
   import:              core
@@ -46,65 +49,90 @@ library
                        -Wpartial-fields
 
 executable rpar_rpar
-  import:              exe
+  import:              exe-threaded
   hs-source-dirs:      src
   main-is:             rpar_rpar.hs
 
 executable rpar_rseq
-  import:              exe
+  import:              exe-threaded
   hs-source-dirs:      src
   main-is:             rpar_rseq.hs
 
 executable rpar_rseq_rseq
-  import:              exe
+  import:              exe-threaded
   hs-source-dirs:      src
   main-is:             rpar_rseq_rseq.hs
 
 executable rpar_rpar_rseq_rseq
-  import:              exe
+  import:              exe-threaded
   hs-source-dirs:      src
   main-is:             rpar_rpar_rseq_rseq.hs
 
 executable rpar_fib
-  import:              exe
+  import:              exe-threaded
   hs-source-dirs:      src
   main-is:             rpar_fib.hs
 
 executable sudoku1
-  import:              exe
+  import:              exe-threaded
   hs-source-dirs:      src
   main-is:             sudoku1.hs
   other-modules:       Sudoku
 
 executable sudoku2
-  import:              exe
+  import:              exe-threaded
   hs-source-dirs:      src
   main-is:             sudoku2.hs
   build-depends:       pcph
   other-modules:       Sudoku
 
 executable sudoku3
-  import:              exe
+  import:              exe-threaded
   hs-source-dirs:      src
   main-is:             sudoku3.hs
   build-depends:       pcph
   other-modules:       Sudoku
 
 executable strat1
-  import:              exe
+  import:              exe-threaded
   hs-source-dirs:      src
   main-is:             strat1.hs
   build-depends:       pcph
 
 executable strat2
-  import:              exe
+  import:              exe-threaded
   hs-source-dirs:      src
   main-is:             strat2.hs
   build-depends:       pcph
 
 executable sudoku4
-  import:              exe
+  import:              exe-threaded
   hs-source-dirs:      src
   main-is:             sudoku4.hs
   build-depends:       pcph
   other-modules:       Sudoku
+
+executable sudoku5
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             sudoku5.hs
+  build-depends:       pcph
+  other-modules:       Sudoku
+
+executable rsa1
+  import:              core
+  hs-source-dirs:      src
+  main-is:             rsa1.hs
+  build-depends:       pcph
+
+executable rsa2
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             rsa2.hs
+  build-depends:       pcph
+
+executable rsa3
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             rsa3.hs
+  build-depends:       pcph

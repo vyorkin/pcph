@@ -33,9 +33,12 @@ instance NFData a => NFData (Tree a) where
 The idea is to just recursively apply `rnf` to the components of the data type,
 composing the calls to `rnf` together with `seq`.
 
-`a seq b` - Evaluate `a` to WHNF and return `b`
+`a seq b` - Evaluate `a` to WHNF and return `b`.
 
 `rnf a` - Evaluate `a` to NF and return `()`.
+
+The default definition uses seq,
+which is convenient for types that have no substructure:
 
 ```haskell
 rnf a = a `seq` ()
@@ -50,7 +53,8 @@ deepseq a b = rnf a `seq` b
 
 * `force` - Turn WHNF into NF.
 
-If the program evaluates `force x` to WHNF, then `x` will be evaluated to NF.
+If the program evaluates `force x` to WHNF,
+then `x` will be evaluated to NF.
 
 ```haskell
 force :: NFData a => a -> a
@@ -116,8 +120,22 @@ is the longest one.
 type Strategy a = a -> Eval a
 ```
 
-Strategy takes a data structure as input, traverses the structure creating
+`Strategy` takes a data structure as input, traverses the structure creating
 parallelism with `rpar` and rseq, and then returns the original value.
+
+For example, here is the strategy that fully evaluates its argument:
+
+```haskell
+rdeepseq :: NFData a => Strategy a
+rdeepseq x = rseq (force x)
+```
+
+which is equivalent to:
+
+```haskell
+rdeepseq :: NFData a => Strategy a
+rdeepseq x = do rseq (rnf x); return x
+```
 
 Use `rparWith` to apply a `Strategy` in parallel.
 
@@ -133,3 +151,22 @@ first component of both pairs in parallel.
 ```haskell
 evalPair (evalPair rpar r0) (evalPair rpar r0)
 ```
+
+`parList` evaluates all the items in parallel, setting them all off at once.
+This is useful when you want to consume the entire list at once.
+
+The `parBuffer` function has a similar type to `parList` but takes an Int argument
+as a buffer size. In contrast to `parList` which eagerly creates a spark for every
+list element, `parBuffer N` creates sparks for only the first `N` elements of the
+list, and then creates more sparks as the result list is consumed. The effect is
+that there will always be N sparks available until the end of the list is
+reached.
+
+`parBuffer` evaluates the first `n` elements, and when you consume beyond that, it
+sets off the next `n`, and so on. `parBuffer` makes sense when you are going to
+consume the list in chunks, starting at the beginning. Or when the list is very
+large (or infinite) and you won't evaluate it all
+
+`parBuffer` is conceptually similar to a circular buffer with a constant window
+size rolling over the input and producing the output and is useful when
+implementing pipeline parallelism or working with lazy streams.
