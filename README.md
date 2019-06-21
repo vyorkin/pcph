@@ -170,3 +170,76 @@ large (or infinite) and you won't evaluate it all
 `parBuffer` is conceptually similar to a circular buffer with a constant window
 size rolling over the input and producing the output and is useful when
 implementing pipeline parallelism or working with lazy streams.
+
+## The `Par` monad
+
+`Par` monad is particularly suited to expressing dataflow networks.
+
+```haskell
+newtype Par a
+instance Applicative Par
+instance Monad Par
+
+runPar :: Par a -> a
+```
+
+Forks a computation to happen in parallel:
+
+```haskell
+fork :: Par () -> Par ()
+```
+
+ Values can be passed between `Par` computations using the `IVar` type and its
+ operations:
+
+```haskell
+new :: Par (IVar a)
+put :: NFData a => IVar a -> a -> Par ()
+get :: IVar a -> Par a
+```
+
+Think of an `IVar` as a box that starts empty.
+The `put` operation stores a value in the box, and `get` reads the value.
+If the `get` operation finds the box empty, then it waits until the box is filled by a `put`.
+
+Once filled, the box stays full; the `get` operation doesn’t remove the value
+from the box. It is an error to call `put` more than once on the same `IVar`.
+
+The `put` function calls `deepseq` on the value it puts in the `IVar`, which is
+why its type has an `NFData` constraint.
+
+`IVar` and `MVar` are similar, the main difference being that an IVar can be
+written only once.
+
+CAUTION: Never return `IVar a` from `runPar`.
+
+`spawn` forks a computation in parallel and returns an `IVar` that can be used
+to wait for the result.
+
+```haskell
+spawn :: NFData a => Par a -> Par (IVar a)
+```
+
+Parallel map consists of calling `spawn` to apply the function to each element
+of the list and then waiting for all the results.
+
+```haskell
+parMap :: NFData b => (a -> b) -> [a] -> Par [b]
+parMapM :: NFData b => (a -> Par b) -> [a] -> Par [b]
+```
+
+Note that in `parMapM` the function argument, `f`, returns its result in the
+`Par` monad; this means that `f` itself can create further parallelism using
+`fork` and the other `Par` operations.
+
+`parMapM` and `parMap` wait for all the results before returning. Depending on
+the context, this may or may not be the most useful behavior. If you don’t want
+to wait for the results, then you could always just use `mapM (spawn . f)`,
+which returns a list of `IVars`.
+
+The `put_` operation evaluates the value to WHNF only. Replacing `put` with
+`put_` can save some time if you know that the argument is already fully evaluated.
+
+```haskell
+put_ :: IVar a -> a -> Par ()
+```

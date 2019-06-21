@@ -10,6 +10,7 @@ extra-source-files:  CHANGELOG.md
 common core
   build-depends:       base
                      , parallel
+                     , monad-par
                      , deepseq
                      , bytestring
                      , time
@@ -135,4 +136,10 @@ executable rsa3
   import:              exe-threaded
   hs-source-dirs:      src
   main-is:             rsa3.hs
+  build-depends:       pcph
+
+executable parmonad
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             parmonad.hs
   build-depends:       pcph
