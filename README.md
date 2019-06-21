@@ -243,3 +243,8 @@ The `put_` operation evaluates the value to WHNF only. Replacing `put` with
 ```haskell
 put_ :: IVar a -> a -> Par ()
 ```
+
+About `ParVis`:
+
+* https://www.youtube.com/watch?v=lJ12sqGHctU
+* http://www.cse.chalmers.se/~patrikj/papers/Algehed_Jansson_VisPar_preprint_2017-06-09.pdf
