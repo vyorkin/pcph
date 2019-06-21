@@ -7,8 +7,9 @@ module Main (main) where
 --
 
 -- Running:
--- 1) Get your own data.bin
--- 2) cabal new-exec rsa1 encrypt data.bin >/dev/null +RTS -s
+-- 1) Get your own data
+-- 2) cabal new-exec rsa2 encrypt ./data/xxx.bin >/dev/null +RTS -s -N2
+
 
 -- 94,120,928 bytes allocated in the heap
 -- 25,173,904 bytes copied during GC

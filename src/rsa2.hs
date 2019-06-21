@@ -1,10 +1,7 @@
 module Main (main) where
 
---
--- Derived from a program believed to be originally written by John
--- Launchbury, and incorporating the RSA algorithm which is in the
--- public domain.
---
+-- 1) Get your own data
+-- 2) cabal new-exec rsa1 encrypt ./data/xxx.bin >/dev/null +RTS -s -N2
 
 import System.Environment
 import Data.List
