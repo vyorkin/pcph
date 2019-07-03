@@ -30,14 +30,13 @@ instance NFData a => NFData (Tree a) where
 
 #### `seq`, `deepseq`, `rnf`, `evaluate`, `force`
 
-The idea is to just recursively apply `rnf` to the components of the data type,
-composing the calls to `rnf` together with `seq`.
+The idea is to just recursively apply `rnf` to the components of
+the data type, composing the calls to `rnf` together with `seq`.
 
 `a seq b` - Evaluate `a` to WHNF and return `b`.
 
 `rnf a` - Evaluate `a` to NF and return `()`.
 
-The default definition uses seq,
 which is convenient for types that have no substructure:
 
 ```haskell
@@ -51,7 +50,7 @@ deepseq :: NFData a => a -> b -> b
 deepseq a b = rnf a `seq` b
 ```
 
-* `force` - Turn WHNF into NF.
+`force` - Turn WHNF into NF.
 
 If the program evaluates `force x` to WHNF,
 then `x` will be evaluated to NF.
@@ -92,13 +91,13 @@ fn :: Int -> Int -> (Int, Int)
 fn x y = runEval $ do
   let f = (+ 1)
   a <- rpar (f x)
-  b <- rseq (f y)
-  void $ rseq a
+  b <- rseq (f y) -- wait for (f y)
+  void $ rseq a   -- wait for (f x)
   return (a, b)
 ```
 
-Use when you need the results of
-one of the operations in order to continue.
+Use when you need the results of **both** operations in order
+to continue.
 
 3. `rpar` + `rseq`
 
@@ -111,17 +110,78 @@ fn x y = runEval $ do
   return (a, b)
 ```
 
-Unlikely to be useful. We rarely know in advance which of the two computations
-is the longest one.
+Unlikely to be useful. We rarely know in advance which of the
+two computations is the longest one.
+
+4. `rpar` + `rpar` + `rseq` + `rseq`
+
+```haskell
+fn :: Eval (Integer, Integer)
+fn = do
+  let f = (+ 1)
+  a <- rpar (f x)
+  b <- rpar (f y)
+  void $ rseq a
+  void $ rseq b
+  return (x, y)
+```
+
+Same as 2. but looks better (because of `rpar - rseq` symmetry!), so
+this one is preferable.
+
+Summary: if you don't depend on the results of either operation
+and want to generate more parallelism -- use `rpar + rpar`.
+Otherwise, if we've generated all the parallelism we can, or we
+need the results of one of the operations in order to continue
+-- use `rpar + rseq + rseq` (or `rpar + rpar + rseq + rseq`,
+which is more "symmetric").
+
+**CAUTION**: Not evaluating deeply enough is a common mistake
+when using `rpar`.
+
+General rules:
+
+**Avoid static partitioning**: Don't try to partition the work
+into a known fixed amount of chunks. These chunks rarely contain
+an equal amount of work, so there will be some imbalance between
+HEC's, leading to a loss of speedup.
+
+Parallelism is limited to the number of chunks, so use **dynamic
+partitioning**, which means supplying just enough tasks (sparks)
+by calling `rpar` (the argument to `rpar` is called _spark_) often
+enough so that GHC can balance the work evenly.
+
+The runtime collects sparks in a pool and uses it as a source of
+work when there are spare processors available. Sparks are cheap
+(just a pointer to the expression).
+
+**Avoid creating too many sparks**: There is some overhead per
+chunk in creating the spark and arranging to run it on another
+processor. The smaller chunks are, the more significant becomes
+the overhead.
 
 ## Eval Strategies
+
+`Strategy` separates the algorithm from the parallelism. It
+takes a data structure as input, traverses the structure
+creating parallelism with `rpar` and `rseq`, and then returns
+the original value.
+
 
 ```haskell
 type Strategy a = a -> Eval a
 ```
 
-`Strategy` takes a data structure as input, traverses the structure creating
-parallelism with `rpar` and rseq, and then returns the original value.
+Parallelism is expressed using the `Eval` monad.
+
+```haskell
+newtype Eval a = Eval { unEval_ :: IO a }
+  deriving (Functor, Applicative, Monad)
+```
+
+```haskell
+runEval :: Eval a -> a
+```
 
 For example, here is the strategy that fully evaluates its argument:
 
@@ -152,19 +212,22 @@ first component of both pairs in parallel.
 evalPair (evalPair rpar r0) (evalPair rpar r0)
 ```
 
-`parList` evaluates all the items in parallel, setting them all off at once.
-This is useful when you want to consume the entire list at once.
+`parList` evaluates all the items in parallel, setting them all
+off at once. This is useful when you want to consume the entire
+list at once.
 
-The `parBuffer` function has a similar type to `parList` but takes an Int argument
-as a buffer size. In contrast to `parList` which eagerly creates a spark for every
-list element, `parBuffer N` creates sparks for only the first `N` elements of the
-list, and then creates more sparks as the result list is consumed. The effect is
-that there will always be N sparks available until the end of the list is
-reached.
+The `parBuffer` function has a similar type to `parList` but
+takes an `Int` argument as a buffer size. In contrast to
+`parList` which eagerly creates a spark for every list element,
+`parBuffer N` creates sparks for only the first `N` elements of
+the list, and then creates more sparks as the result list is
+consumed. The effect is that there will always be `N` sparks
+available until the end of the list is reached.
 
-`parBuffer` evaluates the first `n` elements, and when you consume beyond that, it
-sets off the next `n`, and so on. `parBuffer` makes sense when you are going to
-consume the list in chunks, starting at the beginning. Or when the list is very
+`parBuffer` evaluates the first `n` elements, and when you
+consume beyond that, it sets off the next `n`, and so on.
+`parBuffer` makes sense when you are going to consume the list
+in chunks, starting at the beginning. Or when the list is very
 large (or infinite) and you won't evaluate it all
 
 `parBuffer` is conceptually similar to a circular buffer with a constant window
@@ -173,7 +236,8 @@ implementing pipeline parallelism or working with lazy streams.
 
 ## The `Par` monad
 
-`Par` monad is particularly suited to expressing dataflow networks.
+`Par` monad is particularly suited to expressing dataflow
+networks.
 
 ```haskell
 newtype Par a
@@ -189,8 +253,8 @@ Forks a computation to happen in parallel:
 fork :: Par () -> Par ()
 ```
 
- Values can be passed between `Par` computations using the `IVar` type and its
- operations:
+Values can be passed between `Par` computations using the
+`IVar` type and its operations:
 
 ```haskell
 new :: Par (IVar a)
@@ -198,47 +262,63 @@ put :: NFData a => IVar a -> a -> Par ()
 get :: IVar a -> Par a
 ```
 
-Think of an `IVar` as a box that starts empty.
-The `put` operation stores a value in the box, and `get` reads the value.
-If the `get` operation finds the box empty, then it waits until the box is filled by a `put`.
+Think of an `IVar` as a box that starts empty. The `put`
+operation stores a value in the box, and `get` reads the value.
+If the `get` operation finds the box empty, then it waits until
+the box is filled by a `put`.
 
-Once filled, the box stays full; the `get` operation doesn’t remove the value
-from the box. It is an error to call `put` more than once on the same `IVar`.
+* `get x` means "wait `x` to finish"
+* `mapM get xs` means "wait for all `xs` to finish"
 
-The `put` function calls `deepseq` on the value it puts in the `IVar`, which is
-why its type has an `NFData` constraint.
+Once filled, the box stays full; the `get` operation doesn’t
+remove the value from the box. It is an error to call `put` more
+than once on the same `IVar`.
 
-`IVar` and `MVar` are similar, the main difference being that an IVar can be
-written only once.
+The `put` function calls `deepseq` on the value it puts in the
+`IVar`, which is why its type has an `NFData` constraint.
 
-CAUTION: Never return `IVar a` from `runPar`.
+`IVar` and `MVar` are similar, the main difference being that an
+`IVar` can be written only once.
 
-`spawn` forks a computation in parallel and returns an `IVar` that can be used
-to wait for the result.
+```haskell
+newtype IVar a = IVar (IORef (IVarContents a))
+```
+
+**CAUTION**: Never return `IVar a` from `runPar`.
+
+`spawn` forks a computation in parallel and returns an `IVar`
+that can be used to wait for the result. Basically it is `fork +
+put`.
 
 ```haskell
 spawn :: NFData a => Par a -> Par (IVar a)
 ```
 
-Parallel map consists of calling `spawn` to apply the function to each element
-of the list and then waiting for all the results.
+Parallel map consists of calling `spawn` to apply the function
+to each element of the list and then waiting for all the
+results.
 
 ```haskell
 parMap :: NFData b => (a -> b) -> [a] -> Par [b]
+```
+
+```haskell
 parMapM :: NFData b => (a -> Par b) -> [a] -> Par [b]
 ```
 
-Note that in `parMapM` the function argument, `f`, returns its result in the
-`Par` monad; this means that `f` itself can create further parallelism using
-`fork` and the other `Par` operations.
+Note that in `parMapM` the function argument, `f`, returns its
+result in the `Par` monad; this means that `f` itself can create
+further parallelism using `fork` and the other `Par` operations.
 
-`parMapM` and `parMap` wait for all the results before returning. Depending on
-the context, this may or may not be the most useful behavior. If you don’t want
-to wait for the results, then you could always just use `mapM (spawn . f)`,
-which returns a list of `IVars`.
+`parMapM` and `parMap` wait for all the results before
+returning. Depending on the context, this may or may not be the
+most useful behavior. If you don’t want to wait for the results,
+then you could always just use `mapM (spawn . f)`, which returns
+a list of `IVars`.
 
-The `put_` operation evaluates the value to WHNF only. Replacing `put` with
-`put_` can save some time if you know that the argument is already fully evaluated.
+The `put_` operation evaluates the value to WHNF only. Replacing
+`put` with `put_` can save some time if you know that the
+argument is already fully evaluated.
 
 ```haskell
 put_ :: IVar a -> a -> Par ()
@@ -248,3 +328,50 @@ About `ParVis`:
 
 * https://www.youtube.com/watch?v=lJ12sqGHctU
 * http://www.cse.chalmers.se/~patrikj/papers/Algehed_Jansson_VisPar_preprint_2017-06-09.pdf
+
+## Repa (REgular PArallel arrays)
+
+We can't use `Strategy`'s to parallelize large-scale array
+computations, becuase they require operations over unboxed
+arrays. Similarly, `Par` doesn't work well here either, because
+in `Par` the data is passed in `IVar**'s.
+
+**Repa** provides a range of efficient operations for creating
+arrays and operating on arrays in parallel.
+
+```haskell
+data Array r sh e
+```
+
+* `e` - type of the elements
+* `r` - representation type
+* `sh` - shape of the array (number of dimensions)
+
+Shapes are built out of two type constructors, `Z` and `:.`
+
+```haskell
+data Z = Z
+data tail :. head = tail :. head
+```
+
+* `Z` - shape of an array with no dimensions (scalar)
+* `Z :. Int` - array with a single dimension indexed by `Int`
+* `Z :. Int :. Int` - 2-dimensional array
+
+The `Z` and `:.` symbols are both type constructors and value
+constructors. E.g. `Z :. 3` can be either the shape of 3-element
+vectors, or the index of the 4-th element of a vector.
+
+A few handy type synonyms:
+
+```haskell
+type DIM0 = Z
+type DIM1 = DIM0 :. Int
+type DIM2 = DIM1 :. Int
+```
+
+```haskell
+fromListUnboxed :: (Shape sh, Unbox a) => sh -> [a] -> Array U sh a
+```
+
+* `U` means "unboxed"

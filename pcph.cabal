@@ -13,6 +13,7 @@ common core
                      , monad-par
                      , deepseq
                      , bytestring
+                     , repa
                      , time
                      , array
   default-language:    Haskell2010
@@ -142,4 +143,16 @@ executable parmonad
   import:              exe-threaded
   hs-source-dirs:      src
   main-is:             parmonad.hs
+  build-depends:       pcph
+
+executable parbuf1
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             parbuf1.hs
+  build-depends:       pcph
+
+executable repa1
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             repa1.hs
   build-depends:       pcph

@@ -1,10 +1,10 @@
 module Main (main) where
 
-import System.Environment (getArgs)
-import Data.Time.Clock (UTCTime, getCurrentTime, diffUTCTime)
-import Text.Printf (printf)
 import Control.Monad (void)
-import Control.Parallel.Strategies (Eval, runEvalIO, rpar, rseq)
+import Control.Parallel.Strategies (Eval, rpar, rseq, runEvalIO)
+import Data.Time.Clock (UTCTime, diffUTCTime, getCurrentTime)
+import System.Environment (getArgs)
+import Text.Printf (printf)
 
 main :: IO ()
 main = do

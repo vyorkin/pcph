@@ -54,6 +54,20 @@ parMapM f as = do
   ibs <- mapM (spawn . f) as
   mapM get ibs
 
+-- `get` means "wait"
+
+-- as        :: [a]
+-- f         :: a -> Par b
+-- spawn     :: Par a -> Par (IVar a)
+-- spawn . f :: a -> Par (IVar b)
+-- mapM      :: (a -> m b) -> t a -> m (t b)
+-- mapM      :: (a -> Par (IVar b)) -> [a] -> Par [b]
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ibs          :: [b]
+-- get          :: IVar a -> Par a
+-- mapM         :: (IVar b -> Par b) -> [b] -> Par [b]
+-- mapM get ibs :: Par [b]
+
 parMap :: NFData b => (a -> b) -> [a] -> Par [b]
 parMap f as = do
   ibs <- mapM (spawn . return . f) as

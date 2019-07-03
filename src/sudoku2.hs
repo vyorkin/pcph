@@ -42,8 +42,10 @@ main = do
     puzzles = lines file
     (as, bs) = splitAt (length puzzles `div` 2) puzzles
     solutions = runEval $ do
-      as' <- rpar (force (map solve as))
-      bs' <- rpar (force (map solve bs))
+      -- Not evaluating deeply enough is a
+      -- common mistake when using `rpar`
+      as' <- rpar $ force (solve <$> as)
+      bs' <- rpar $ force (solve <$> bs)
       void $ rseq as'
       void $ rseq bs'
       return (as' ++ bs')
