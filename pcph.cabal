@@ -13,6 +13,7 @@ common core
                      , monad-par
                      , deepseq
                      , bytestring
+                     , containers
                      , repa
                      , time
                      , array
@@ -155,4 +156,40 @@ executable repa1
   import:              exe-threaded
   hs-source-dirs:      src
   main-is:             repa1.hs
+  build-depends:       pcph
+
+executable fork1
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             fork1.hs
+  build-depends:       pcph
+
+executable reminders1
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             reminders1.hs
+  build-depends:       pcph
+
+executable reminders2
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             reminders2.hs
+  build-depends:       pcph
+
+executable logger
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             Logger.hs
+  build-depends:       pcph
+
+executable phonebook
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             Phonebook.hs
+  build-depends:       pcph
+
+executable chan1
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             Chan1.hs
   build-depends:       pcph

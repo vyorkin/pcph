@@ -26,8 +26,9 @@ n, d, e :: Integer
 
 encrypt, decrypt :: Integer -> Integer -> ByteString -> ByteString
 
--- `parList` evaluates all the items in parallel, setting them all off at once.
--- This is useful when you want to consume the entire list at once.
+-- `parList` evaluates all the items in parallel, setting them
+-- all off at once. This is useful when you want to consume the
+-- entire list at once.
 
 -- <<encrypt
 encrypt n e = B.unlines                                -- <3>

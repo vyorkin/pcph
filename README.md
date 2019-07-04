@@ -334,7 +334,7 @@ About `ParVis`:
 We can't use `Strategy`'s to parallelize large-scale array
 computations, becuase they require operations over unboxed
 arrays. Similarly, `Par` doesn't work well here either, because
-in `Par` the data is passed in `IVar**'s.
+in `Par` the data is passed in `IVar`'s.
 
 **Repa** provides a range of efficient operations for creating
 arrays and operating on arrays in parallel.
@@ -375,3 +375,75 @@ fromListUnboxed :: (Shape sh, Unbox a) => sh -> [a] -> Array U sh a
 ```
 
 * `U` means "unboxed"
+
+## Concurrency
+
+The `MVar` is a fundamental building block that generalizes many
+different communication and synchronization patterns.
+
+```haskell
+data MVar a
+
+newEmptyMVar :: IO (MVar a)
+newMVar :: a -> IO (MVar a)
+takeMVar :: MVar a -> IO a
+putMVar :: MVar a -> a -> IO ()
+```
+
+* `MVar` - Is a box (empty/full).
+* `newMVar` - Creates a new **full** box (with a value passed as
+  its arguments).
+* `takeMVar` - Removes the values from a **full** `MVar` and
+  returns it. Blocks (waits) if the `MVar` is currently empty.
+* `putMVar` - Puts a value into `MVar` but blocks if the `MVar`
+   is already full.
+
+`MVar` is a:
+* One-place channel (box) for passing messages between threads.
+* Container for shared mutable state.
+
+Examples:
+
+```haskell
+main = do
+  m <- newEmptyMVar
+  forkIO $ putMVar m 'x'
+  r <- takeMVar m
+  print r
+```
+
+```haskell
+main = do
+  m <- newEmptyMVar
+  forkIO $ do
+    putMVar m 'x'
+    putMVar m 'y'
+  r <- takeMVar m
+  print r
+  r <- takeMVar m
+  print r
+```
+
+Deadlock detection:
+
+```haskell
+main = do
+  m <- newEmptyMVar
+  takeMVar m
+```
+
+The run time detects this and throws `BlockedIndefinitelyOnMVar`
+exception:
+
+```
+thread blocked indefinitely in an MVar operation
+```
+
+`MVar` provides the combination of a lock and a mutable variable
+in Haskell. To **acquire the lock**, we **take** the `MVar`,
+whereas, to update the variable and **release the lock**, we
+**put** the `MVar`.
+
+ We can take any pure immutable data structure such as `Map` and
+ turn it into mutable shared state by simply wrapping it in an
+ `MVar`.
