@@ -7,6 +7,10 @@ Concurrent Programming in Haskell book) by Simon Marlow.
 
 # Notes
 
+### Intro
+
+`:sprint` – Prints a value without forcing its evaluation.
+
 ### Basics
 
 #### `NFData`
@@ -28,14 +32,13 @@ instance NFData a => NFData (Tree a) where
   rnf (Branch l x r) = rnf l `seq` rnf x `seq` rnf r
 ```
 
-#### `seq`, `deepseq`, `rnf`, `evaluate`, `force`
-
 The idea is to just recursively apply `rnf` to the components of
 the data type, composing the calls to `rnf` together with `seq`.
 
-`a seq b` - Evaluate `a` to WHNF and return `b`.
+#### `seq`, `deepseq`, `rnf`, `evaluate`, `force`
 
-`rnf a` - Evaluate `a` to NF and return `()`.
+* `a seq b` - Evaluate `a` to WHNF and return `b`
+* `rnf a` - Evaluate `a` to NF and return `()`
 
 which is convenient for types that have no substructure:
 

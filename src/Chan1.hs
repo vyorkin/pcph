@@ -8,8 +8,8 @@ data Chan a = Chan (MVar (Stream a)) (MVar (Stream a))
 -- ~
 data Item' a = Item' a (MVar (Item' a))
 data Chan' a = Chan'
-(MVar (MVar (Item' a))) --  readVar
-(MVar (MVar (Item' a))) -- writeVar
+  (MVar (MVar (Item' a))) --  readVar
+  (MVar (MVar (Item' a))) -- writeVar
 
 main :: IO ()
 main = return ()
