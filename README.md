@@ -450,3 +450,116 @@ whereas, to update the variable and **release the lock**, we
  We can take any pure immutable data structure such as `Map` and
  turn it into mutable shared state by simply wrapping it in an
  `MVar`.
+
+## Exceptions
+
+```haskell
+throw :: Exception e => e -> a
+```
+
+```haskell
+class (Typeable e, Show e) => Exception e where
+  -- ...
+```
+
+```haskell
+newtype ErrorCall = ErrorCall String
+    deriving (Typeable)
+
+instance Show ErrorCall where { ... }
+
+instance Exception ErrorCall
+```
+
+```haskell
+throw (ErrorCall "oops!")
+```
+
+```haskell
+error :: String -> a
+error s = throw (ErrorCall s)
+```
+
+Exceptions in Haskell can be caught, _but only in the `IO` monad_:
+
+```haskell
+catch :: Exception e => IO a -> (e -> IO a) -> IO a
+```
+
+The behavior is as follows: the `IO` operation in the first
+argument is performed, and if it throws an exception of the type
+expected by the handler, `catch` executes the handler, passing
+it the exception value that was thrown. So a call to `catch`
+catches only exceptions of a particular type, determined by the
+argument type of the exception handler.
+
+
+Similar to `catch` but returns an `Either`:
+
+```haskell
+try :: Exception e => IO a -> IO (Either e a)
+try a = catch (a >>= \ v -> return (Right v)) (\e -> return (Left e))
+```
+
+Takes an exception predicate to select which exceptions are caught:
+
+```haskell
+tryJust :: Exception e => (e -> Maybe b) -> IO a -> IO (Either b a)
+```
+
+```haskell
+handle :: Exception e => (e -> IO a) -> IO a -> IO a
+```
+
+It is often useful to be able to perform some operation if an
+exception is raised and then re-throw the exception:
+
+```haskell
+onException :: IO a -> IO b -> IO a
+onException io what = io `catch` \e -> do $
+  _ <- what
+  throwIO (e :: SomeException)
+```
+
+`throwIO` guarantees strict ordering with respect to other IO
+operations, whereas `throw` does not.
+
+```haskell
+throwIO :: Exception e => e -> IO a
+```
+
+```haskell
+bracket :: IO a -> (a -> IO b) -> (a -> IO c) -> IO c
+bracket before after during = do
+  a <- before
+  c <- during a `onException` after a
+  after a
+  return c
+```
+
+```haskell
+finally :: IO a -> IO b -> IO a
+finally io after = do
+  io `onException` after
+  after
+```
+
+Every `forkIO` thread gets a default exception handler, that
+prints the exception to `stderr`, and then the thread
+terminates.
+
+## Async Exceptions
+
+To initiate an asynchronous exception:
+
+```haskell
+throwTo :: Exception e => ThreadId -> e -> IO ()
+```
+
+```haskell
+
+```
+
+```haskell
+
+```

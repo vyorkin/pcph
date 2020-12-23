@@ -14,6 +14,8 @@ common core
                      , deepseq
                      , bytestring
                      , containers
+                     , http-client
+                     , http-conduit
                      , repa
                      , time
                      , array
@@ -41,6 +43,8 @@ library
   import:              core
   hs-source-dirs:      src
   exposed-modules:     Sudoku
+                     , GetURL
+                     , TimeIt
   ghc-options:         -Wall
                        -Wincomplete-uni-patterns
                        -Wincomplete-record-updates
@@ -192,4 +196,40 @@ executable chan1
   import:              exe-threaded
   hs-source-dirs:      src
   main-is:             Chan1.hs
+  build-depends:       pcph
+
+executable geturls1
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             GetUrls1.hs
+  build-depends:       pcph
+
+executable geturls2
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             GetUrls2.hs
+  build-depends:       pcph
+
+executable geturls3
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             GetUrls3.hs
+  build-depends:       pcph
+
+executable geturls4
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             GetUrls4.hs
+  build-depends:       pcph
+
+executable geturls5
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             GetUrls5.hs
+  build-depends:       pcph
+
+executable geturls6
+  import:              exe-threaded
+  hs-source-dirs:      src
+  main-is:             GetUrls6.hs
   build-depends:       pcph

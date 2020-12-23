@@ -38,7 +38,7 @@ writeChan (Chan _ writeVar) val = do
 readChan :: Chan a -> IO a
 readChan (Chan readVar _) = do
   stream <- takeMVar readVar       --     R-lock
-  Item val tail <- takeMVar stream -- (1) lock stream
+  Item val tail <- takeMVar stream -- (1) lock stream (forever, take and never put back)
   putMVar readVar tail             -- (2) R-unlock
   return val
 
@@ -78,3 +78,10 @@ readChan' (Chan readVar _) = do
 
 -- ^^^ `readVar` returns the Item back to the Stream, where it
 -- can be read by any duplicate channels created by dupChan'.
+
+unGetChan :: Chan a -> a -> IO ()
+unGetChan (Chan readVar _) val = do
+  newReadEnd <- newEmptyMVar
+  readEnd <- takeMVar readVar           -- R-lock
+  putMVar newReadEnd (Item val readEnd)
+  putMVar readVar newReadEnd            -- R-unlock
